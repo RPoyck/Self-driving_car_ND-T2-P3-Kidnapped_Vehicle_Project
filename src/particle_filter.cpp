@@ -102,13 +102,50 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 }
 
 
-void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) 
+void ParticleFilter::Transform(LandmarkObs& original, Particle& reference, LandmarkObs& transformed)
 {
     
-	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
-	//   observed measurement to this particular landmark.
-	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
-	//   implement this method and use it as a helper during the updateWeights phase.
+    transformed.id = original.id;
+
+    // Transform x coordinate //
+    transformed.x = reference.x + (cos(reference.theta) * original.x) - (sin(reference.theta) * original.y);
+
+    // transform y coordinate //
+    transformed.y = reference.y + (sin(reference.theta) * original.x) + (cos(reference.theta) * original.y);
+
+}
+
+
+double ParticleFilter::DEucl(LandmarkObs& p_1, LandmarkObs& p_2)
+{ 
+    return sqrt( pow(p_1.x-p_2.x,2) + pow(p_1.y-p_2.y,2)); 
+}
+
+
+void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) 
+{
+    unsigned int num_obs = observations.size();
+    unsigned int num_pred = observations.size();
+    unsigned int  best_match;
+    double d_min;
+    // TODO: Find the predicted measurement that is closest to each observed measurement and assign the observed measurement to this particular landmark. //
+    for (int i=0; i < num_obs; i++)
+    {
+	d_min = DEucl(observations[i], predicted[0]);
+	best_match = predicted[0].id;
+	
+	for (int i2=1; i2 < num_pred; i2++)
+	{
+	    double d = DEucl(observations[i], predicted[i2]);
+	    if (d < d_min)
+	    {
+		d_min = d;
+		best_match = predicted[0].id;
+	    }
+	}
+	observations[i].id = best_match;
+    }
+    // NOTE: this method will NOT be called by the grading code. But you will probably find it useful to implement this method and use it as a helper during the updateWeights phase.
 
 }
 
@@ -118,6 +155,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], c
     
     // TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
     //   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
+    
     // NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
     //   according to the MAP'S coordinate system. You will need to transform between the two systems.
     //   Keep in mind that this transformation requires both rotation AND translation (but no scaling).
