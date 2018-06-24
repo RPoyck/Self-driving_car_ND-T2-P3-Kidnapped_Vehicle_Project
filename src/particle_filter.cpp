@@ -60,8 +60,40 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) 
 {
     
-    // TODO: Add measurements to each particle and add random Gaussian noise.
+    double sigma_x = std_pos[0];
+    double sigma_y = std_pos[1];
+    double sigma_theta = std_pos[2];
     
+    default_random_engine gen;
+    
+    // Add measurements to each particle and add random Gaussian noise. //
+    for (int i = 0; i < this->num_particles; i++)
+    {
+	if (abs(yaw_rate) < pow(10,-6) )
+	{
+	    // Add measurement to x position //
+	    particles[i].x += velocity*delta_t*cos(particles[i].theta);
+	    // Add measurement to y position //
+	    particles[i].y += velocity*delta_t*sin(particles[i].theta);
+	}
+	else
+	{
+	    // Add measurement to x position //
+	    particles[i].x += (velocity/yaw_rate) * (sin(particles[i].theta + (yaw_rate*delta_t)) - sin(particles[i].theta));
+	    // Add measurement to y position //
+	    particles[i].y += (velocity/yaw_rate) * (cos(particles[i].theta) - cos(particles[i].theta + (yaw_rate*delta_t)));
+	    // Add measurement to orientation //
+	    particles[i].theta += yaw_rate*delta_t;
+	}
+	
+	// Add random Gaussian noise. //
+	normal_distribution<double> dist_x(particles[i].x, sigma_x);
+	particles[i].x = dist_x(gen);
+	normal_distribution<double> dist_y(particles[i].y, sigma_y);
+	particles[i].y = dist_y(gen);
+	normal_distribution<double> dist_theta(particles[i].theta, sigma_theta);
+	particles[i].theta = dist_theta(gen);
+    }
     
     // NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
     //  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
@@ -95,21 +127,21 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], c
     //   3.33
     //   http://planning.cs.uiuc.edu/node99.html
     
-    double x = 6;
-    double y = 3;
-    double mu_x = 5;
-    double mu_y = 3;
-    double sigma_x = 0.3;
-    double sigma_y = 0.3;
-
-    // calculate normalisation term //
-    double gauss_norm= (1/(2 * M_PI * sigma_x * sigma_y));
-    // calculate exponent //
-    double exponent= ((x - mu_x)**2)/(2 * sigma_x**2) + ((y - mu_y)**2)/(2 * sigma_y**2);
-    // calculate weight using normalisation terms and exponent //
-    double weight = gauss_norm * exp(exponent);
-
-    double P = (1/(2*M_PI*sigma_x*sigma_y)) * exp(-( (pow(x-mu_x,2) / (2*sigma_x*sigma_x) ) + (pow(y-mu_y,2) / (2*sigma_y*sigma_y) ) ));
+//     double x = 6;
+//     double y = 3;
+//     double mu_x = 5;
+//     double mu_y = 3;
+//     double sigma_x = 0.3;
+//     double sigma_y = 0.3;
+// 
+//     // calculate normalisation term //
+//     double gauss_norm= (1/(2 * M_PI * sigma_x * sigma_y));
+//     // calculate exponent //
+//     double exponent= ((x - mu_x)**2)/(2 * sigma_x**2) + ((y - mu_y)**2)/(2 * sigma_y**2);
+//     // calculate weight using normalisation terms and exponent //
+//     double weight = gauss_norm * exp(exponent);
+// 
+//     double P = (1/(2*M_PI*sigma_x*sigma_y)) * exp(-( (pow(x-mu_x,2) / (2*sigma_x*sigma_x) ) + (pow(y-mu_y,2) / (2*sigma_y*sigma_y) ) ));
 	
     
     
