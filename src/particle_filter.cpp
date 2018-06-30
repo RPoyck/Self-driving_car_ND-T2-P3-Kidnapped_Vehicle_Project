@@ -2,7 +2,8 @@
  * particle_filter.cpp
  *
  *  Created on: Dec 12, 2016
- *      Author: Tiffany Huang
+ *      Author of the template: Tiffany Huang
+ *      Author of the code: Rob Poyck
  */
 
 #include "particle_filter.h"
@@ -12,10 +13,6 @@ using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) 
 {
-    
-    std::cout << "!! Vehicle x: " << x << "\n";
-    std::cout << "!! Vehicle y: " << y << "\n";
-    std::cout << "!! Vehicle theta: " << theta << "\n";
     
     // Set the number of particles. //
     this->num_particles = 100;
@@ -33,14 +30,14 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
     std::vector<Particle> particles_t;
     for (unsigned int i = 0; i < this->num_particles; i++)
     {
-	// Initialize all particles to first position (based on estimates of x, y, theta and their uncertainties from GPS). //
+	// Initialise all particles to first position (based on estimates of x, y, theta and their uncertainties from GPS). //
 	// Add random Gaussian noise to each particle. //
 	Particle par;
 	par.id = i;
 	par.x = dist_x(gen);
 	par.y = dist_y(gen);
 	par.theta = dist_theta(gen);
-	// Initialize all particles weights to 1. //
+	// Initialise all particles weights to 1. //
 	par.weight = 1.0;
 	weights_t.push_back(par.weight);
 	
@@ -65,13 +62,13 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     normal_distribution<double> dist_x(0, sigma_x);
     normal_distribution<double> dist_y(0, sigma_y);
     normal_distribution<double> dist_theta(0, sigma_theta);
-    
     default_random_engine gen;
     
+    unsigned int part_nums = this->num_particles;
     // Add measurements to each particle and add random Gaussian noise. //
-    for (unsigned int i = 0; i < this->num_particles; i++)
+    for (unsigned int i = 0; i < part_nums; i++)
     {
-	if (fabs(yaw_rate) < 0.000001 )
+	if ( fabs(yaw_rate) < 0.000001 )
 	{
 	    // Add measurement to x position //
 	    particles[i].x += velocity*delta_t*cos(particles[i].theta);
@@ -186,15 +183,16 @@ void ParticleFilter::dataAssociation(Map predicted, std::vector<LandmarkObs>& ob
     for (unsigned int i=0; i < num_obs; i++)
     {
 	int  best_match = -1;
-	double d_min = pow(10.0, 6);
+	double d_min = pow(10.0, 100);
 	
 	for (unsigned int i2=0; i2 < num_pred; i2++)
 	{
-// 	    if (sensor_range < DEucl(part, predicted.landmark_list[i2])) {continue;}
-	    if (sensor_range < dist(part.x, part.y, predicted.landmark_list[i2].x_f, predicted.landmark_list[i2].y_f)) {continue;}
+	    // If the landmark is outside of the range of the sensor, this landmark need not be considered //
+	    if (sensor_range < DEucl(part, predicted.landmark_list[i2])) {continue;}
+// 	    if (sensor_range < dist(part.x, part.y, predicted.landmark_list[i2].x_f, predicted.landmark_list[i2].y_f)) {continue;}
 	    
-// 	    double d = DEucl(observations[i], predicted.landmark_list[i2]);
-	    double d = dist(observations[i].x, observations[i].y, predicted.landmark_list[i2].x_f, predicted.landmark_list[i2].y_f);
+	    double d = DEucl(observations[i], predicted.landmark_list[i2]);
+// 	    double d = dist(observations[i].x, observations[i].y, predicted.landmark_list[i2].x_f, predicted.landmark_list[i2].y_f);
 	    
 	    if (d < d_min)
 	    {
@@ -231,11 +229,12 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], c
 	unsigned int num_obs = observations_t.size();
 	for (unsigned int i2=0; i2 < num_obs; i2++)
 	{
-	    if (observations_t[i2].id == -1) {continue;}
+	    int matching_landmark = observations_t[i2].id;
+	    if (matching_landmark == -1) {continue;}
 	    double x = observations_t[i2].x;
 	    double y = observations_t[i2].y;
-	    double mu_x = map_landmarks.landmark_list[observations_t[i2].id].x_f;
-	    double mu_y = map_landmarks.landmark_list[observations_t[i2].id].y_f;
+	    double mu_x = map_landmarks.landmark_list[matching_landmark].x_f;
+	    double mu_y = map_landmarks.landmark_list[matching_landmark].y_f;
 
 	    // calculate exponent //
 	    double exponent= ( pow((x - mu_x),2) / (2 * pow(sigma_x, 2)) ) + ( pow((y - mu_y), 2) / (2 * pow(sigma_y, 2)) );
@@ -261,16 +260,16 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], c
 
 
 // Resample particles with replacement with probability proportional to their weight. //
-void ParticleFilter::resample() 
+void ParticleFilter::resample()
 {
 
-    double max_w = this->weights[*max_element(std::begin(this->weights), std::end(this->weights))];
-    
+    double max_w = *max_element(std::begin(this->weights), std::end(this->weights));
+
     // If the maximally weighted particle has a weight of (near) zero, all particles have probably drifted from the vehicle location too much and are all reinitialised //
     if (max_w < pow(10.0, -250.0)) {this->is_initialized = false;}
     
     std::default_random_engine re;
-    discrete_distribution<int> unif(0.0, (2*max_w));
+    std::uniform_real_distribution<double> unif(0.0, (2.0*max_w));
     
     double beta = 0.0;
     unsigned int i2 = 0;
@@ -283,10 +282,9 @@ void ParticleFilter::resample()
 	// Take this particle into the new particle list // 
 	
 	beta += unif(re);
-	
-	while (beta > this->weights[i2])
+	while (this->particles[i2].weight < beta)
 	{
-	    beta -= this->weights[i2];
+	    beta -= this->particles[i2].weight;
 	    i2 = (i2+1) % this->num_particles;
 	}
 	particles_t.push_back(this->particles[i2]);

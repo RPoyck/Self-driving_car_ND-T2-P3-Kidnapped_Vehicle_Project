@@ -11,7 +11,6 @@
 #include <iostream>
 #include <numeric>
 #include <math.h> 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <iterator>
@@ -99,7 +98,6 @@ public:
     * @param transformed Empty vector of poses to write the resulting poses to.
     */
 //     void Transform(std::vector<LandmarkObs> original, Particle reference, std::vector<LandmarkObs>& transformed);
-    
     std::vector<LandmarkObs> Transform(std::vector<LandmarkObs> original, Particle reference);
 
     
@@ -119,8 +117,6 @@ public:
     * @param predicted Vector of predicted landmark observations
     * @param observations Vector of landmark observations
     */
-//     void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations);
-//     void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations, Particle& part, double sensor_range);
     void dataAssociation(Map predicted, std::vector<LandmarkObs>& observations, Particle& part, double sensor_range);
 
 
