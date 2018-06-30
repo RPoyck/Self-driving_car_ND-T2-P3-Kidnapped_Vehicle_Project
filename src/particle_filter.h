@@ -6,6 +6,16 @@
  *      Author: Tiffany Huang
  */
 
+#include <random>
+#include <algorithm>
+#include <iostream>
+#include <numeric>
+#include <math.h> 
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <iterator>
+
 #ifndef PARTICLE_FILTER_H_
 #define PARTICLE_FILTER_H_
 
@@ -28,7 +38,7 @@ struct Particle {
 class ParticleFilter {
 
     // Number of particles to draw
-    int num_particles; 
+    unsigned int num_particles; 
 
     // Flag, if filter is initialized
     bool is_initialized;
@@ -79,8 +89,19 @@ public:
     * @param reference Pose of the original ref. frame within the goal ref. frame.
     * @param transformed Empty pose to write the resulting pose to.
     */
-    void Transform(LandmarkObs& original, Particle& reference, LandmarkObs& transformed);
+//     void Transform(LandmarkObs& original, Particle& reference, LandmarkObs& transformed);
     
+    
+    /**
+    * Transform finds the transform of the original points within another reference frame.
+    * @param original vector of poses of the points in the original ref. frame.
+    * @param reference vector of poses of the original ref. frame within the goal ref. frame.
+    * @param transformed Empty vector of poses to write the resulting poses to.
+    */
+//     void Transform(std::vector<LandmarkObs> original, Particle reference, std::vector<LandmarkObs>& transformed);
+    
+    std::vector<LandmarkObs> Transform(std::vector<LandmarkObs> original, Particle reference);
+
     
     /**
     * Returns the Euclidean distance between two points.
@@ -88,7 +109,9 @@ public:
     * @param p_2 Point 2.
     */
     double DEucl(LandmarkObs& p_1, LandmarkObs& p_2);
-    
+    double DEucl(LandmarkObs& p_1, Map::single_landmark_s& p_2);
+    double DEucl(Particle& p_1, LandmarkObs& p_2);
+    double DEucl(Particle& p_1, Map::single_landmark_s& p_2);
     
     /**
     * dataAssociation Finds which observations correspond to which landmarks (likely by using
@@ -96,7 +119,9 @@ public:
     * @param predicted Vector of predicted landmark observations
     * @param observations Vector of landmark observations
     */
-    void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations);
+//     void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations);
+//     void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations, Particle& part, double sensor_range);
+    void dataAssociation(Map predicted, std::vector<LandmarkObs>& observations, Particle& part, double sensor_range);
 
 
     /**
@@ -121,7 +146,7 @@ public:
     * Set a particles list of associations, along with the associations calculated world x,y coordinates
     * This can be a very useful debugging tool to make sure transformations are correct and assocations correctly connected
     */
-    Particle SetAssociations(Particle& particle, const std::vector<int>& associations, const std::vector<double>& sense_x, const std::vector<double>& sense_y);
+//     Particle SetAssociations(Particle& particle, const std::vector<int>& associations, const std::vector<double>& sense_x, const std::vector<double>& sense_y);
 
 
     std::string getAssociations(Particle best);
